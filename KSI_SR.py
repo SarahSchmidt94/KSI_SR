@@ -453,11 +453,11 @@ if st.session_state["round1_scores"] is not None:
                                         punkte_spieler_2_runde=punkte_spieler_2_runde+3 
                                         punkte_spieler_2=punkte_spieler_2+3
                                     elif (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]=="3"):
-                                        if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]==1):
+                                        if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]=="1"):
                                             punkte_spieler_1=punkte_spieler_1+3
                                             siege_spieler_1=siege_spieler_1+1
                                             niederlagen_spieler_2=niederlagen_spieler_2+1
-                                        if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]==2):
+                                        if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]=="2"):
                                             punkte_spieler_2=punkte_spieler_2+3
                                             siege_spieler_1=siege_spieler_1+1
                                             niederlagen_spieler_2=niederlagen_spieler_2+1
@@ -647,7 +647,7 @@ if st.session_state["topcut_start"] == "start":
                 if finale:
                     st.session_state["result_Finale"] = pairs_finale_edited
                     ergebnisse_runde1=pairs_finale_edited.loc["Finale", ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
-                    ergebnisse_runde2=pairs_finale_edited.loc["Spiel um Platz 3", ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
+                    #ergebnisse_runde2=pairs_finale_edited.loc["Spiel um Platz 3", ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
 
                     if ergebnisse_runde1.count(1) > ergebnisse_runde1.count(2):
                         st.header("Finaler Punktestand")
