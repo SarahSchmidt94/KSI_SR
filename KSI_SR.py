@@ -61,7 +61,7 @@ with st.form("spieleranzahl"):
         rec_rounds=part_rounds[part_limits[r]]
         rec_topcut=part_topcut[part_limits[r]]
         
-    letsgo = st.form_submit_button("Let's go!")
+    letsgo = st.form_submit_button("Los geht's!")
     if letsgo:
         st.session_state["number"]=number
     
@@ -154,9 +154,9 @@ if (st.session_state["pairs_round1_df"] is not None) and (st.session_state["roun
     with st.form("round1_form"):
         st.header("Runde 1")
         st.write("Es geht los. In dieser Tabelle findest du die Spielerpaarungen für Runde 1. Bitte trage nach der Runde in die Spielergebnis-Spalten den Ausgang des jeweiligen Spiels ein.")
-        st.write("*0 - unentschieden; 1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2; 3 - das Spiel musste aus Zeitgründen abgebrochen werden*")
+        st.write("*1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2; 3 - unentschieden oder Abbruch aus Zeitgründen*")
         st.write("Falls die Spielergebnis-Spalten nicht sichtbar sein sollten, bitte nach rechts sliden oder die Tabelle maximieren.")
-        pairs_round1_df_edited = st.data_editor(st.session_state["pairs_round1_df"],key="round1_editor", height=35*len(st.session_state["pairs_round1_df"])+38)
+        pairs_round1_df_edited = st.data_editor(st.session_state["pairs_round1_df"],key="round1_editor", height=35*len(st.session_state["pairs_round1_df"])+38, hide_index=True)
         #pairs_round1_df_edited = st.data_editor(pairs_round1_df,key="round1_editor")
         fertig = st.form_submit_button("Runde 1 beendet")
 
@@ -197,10 +197,7 @@ if (st.session_state["round1"] is not None) and (st.session_state["pairsRunde 2"
                 unentschieden_spieler_2=0
                 if spiele == 2:
                     for spiel in range(int(spiele)):
-                        if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]==0):
-                            unentschieden_spieler_1=unentschieden_spieler_1+1
-                            unentschieden_spieler_2=unentschieden_spieler_2+1
-                        elif (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]==1):
+                        if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]==1):
                             siege_spieler_1=siege_spieler_1+1
                             niederlagen_spieler_2=niederlagen_spieler_2+1
                             punkte_spieler_1=punkte_spieler_1+3 
@@ -211,12 +208,12 @@ if (st.session_state["round1"] is not None) and (st.session_state["pairsRunde 2"
                         elif (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]==3):
                             if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]==1):
                                 punkte_spieler_1=punkte_spieler_1+3
-                                unentschieden_spieler_1=unentschieden_spieler_1+1
-                                unentschieden_spieler_2=unentschieden_spieler_2+1
+                                siege_spieler_1=siege_spieler_1+1
+                                niederlagen_spieler_2=niederlagen_spieler_2+1
                             if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]==2):
                                 punkte_spieler_2=punkte_spieler_2+3
-                                unentschieden_spieler_1=unentschieden_spieler_1+1
-                                unentschieden_spieler_2=unentschieden_spieler_2+1
+                                siege_spieler_1=siege_spieler_1+1
+                                niederlagen_spieler_2=niederlagen_spieler_2+1
                     if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]==1) & (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 2"]==1):
                         punkte_spieler_1=punkte_spieler_1+1
                     if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]==2) & (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 2"]==2):
@@ -230,15 +227,27 @@ if (st.session_state["round1"] is not None) and (st.session_state["pairsRunde 2"
                         if ausgang.count(1) == 2:
                             punkte_spieler_1=3
                             punkte_spieler_2=0
-                        else:
+                            siege_spieler_1=ausgang.count(1)
+                            niederlagen_spieler_1=ausgang.count(2)
+                            siege_spieler_2=ausgang.count(2)
+                            niederlagen_spieler_2=ausgang.count(1)
+                        elif ausgang.count(2) == 2:
                             punkte_spieler_2=3
                             punkte_spieler_1=0
-                        siege_spieler_1=ausgang.count(1)
-                        niederlagen_spieler_1=ausgang.count(2)
-                        unentschieden_spieler_1=ausgang.count(0)
-                        siege_spieler_2=ausgang.count(2)
-                        niederlagen_spieler_2=ausgang.count(1)
-                        unentschieden_spieler_2=ausgang.count(0)
+                            siege_spieler_1=ausgang.count(1)
+                            niederlagen_spieler_1=ausgang.count(2)
+                            siege_spieler_2=ausgang.count(2)
+                            niederlagen_spieler_2=ausgang.count(1)                            
+                        elif ausgang.count(3) > 0:
+                            punkte_spieler_2=1
+                            punkte_spieler_1=1
+                            siege_spieler_1=1
+                            niederlagen_spieler_1=1
+                            siege_spieler_2=1
+                            niederlagen_spieler_2=1                       
+                            unentschieden_spieler_1=1
+                            unentschieden_spieler_2=1
+                        nicht_beendet=ausgang.count(3)
                 scores_df.loc[spieler1_index, "Punktestand"]=punkte_spieler_1
                 scores_df.loc[spieler2_index, "Punktestand"]=punkte_spieler_2
                 scores_df.loc[spieler1_index, "Siege"]=siege_spieler_1
@@ -247,13 +256,25 @@ if (st.session_state["round1"] is not None) and (st.session_state["pairsRunde 2"
                 scores_df.loc[spieler2_index, "Niederlagen"]=niederlagen_spieler_2
                 scores_df.loc[spieler1_index, "Unentschieden"]=unentschieden_spieler_1
                 scores_df.loc[spieler2_index, "Unentschieden"]=unentschieden_spieler_2
+                if (niederlagen_spieler_1 == 0) & (unentschieden_spieler_1==0):
+                    scores_df.loc[spieler1_index, "Streaks (Runden ohne Niederlage)"]=1
+                    scores_df.loc[spieler2_index, "Streaks (Runden ohne Niederlage)"]=0
+                elif (niederlagen_spieler_2 == 0) & (unentschieden_spieler_2==0):
+                    scores_df.loc[spieler1_index, "Streaks (Runden ohne Niederlage)"]=0
+                    scores_df.loc[spieler2_index, "Streaks (Runden ohne Niederlage)"]=1
+                else:
+                    scores_df.loc[spieler1_index, "Streaks (Runden ohne Niederlage)"]=0
+                    scores_df.loc[spieler2_index, "Streaks (Runden ohne Niederlage)"]=0
                 scores_df.loc[spieler1_index, "Freilose"]=0
                 scores_df.loc[spieler2_index, "Freilose"]=0
                 scores_df.loc[spieler1_index, "Gegner:in Runde 1"]=pairs_round1_df_edited.loc[i,'Spieler:in 2']
                 scores_df.loc[spieler2_index, "Gegner:in Runde 1"]=pairs_round1_df_edited.loc[i,'Spieler:in 1']
                 
             else:
-                scores_df.loc[spieler1_index, "Punktestand"]=7
+                if spiele ==2:
+                    scores_df.loc[spieler1_index, "Punktestand"]=7
+                else:
+                    scores_df.loc[spieler1_index, "Punktestand"]=3
                 scores_df.loc[spieler1_index, "Siege"]=0
                 scores_df.loc[spieler1_index, "Niederlagen"]=0
                 scores_df.loc[spieler1_index, "Unentschieden"]=0
@@ -291,7 +312,7 @@ if st.session_state["round1_scores"] is not None:
         if (st.session_state["round"+str(runde-1)+"_scores"] is not None) & (st.session_state["round"+str(runde)+"_scores"] is None):
             #st.write("Spielstand nach Runde "+str(runde)+":")
             scores_df=st.session_state["round"+str(runde-1)+"_scores"]
-            scores_df=scores_df.sort_values(['Punktestand', 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'], ascending=[False, False,False])
+            scores_df=scores_df.sort_values(['Punktestand',"Streaks (Runden ohne Niederlage)", 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'], ascending=[False, False,False,False])
             scores_df.index=np.arange(1, len(scores_df)+1)
             st.dataframe(scores_df, height=35*len(scores_df)+38)
             runden_title="Runde "+str(runde)
@@ -349,7 +370,7 @@ if st.session_state["round1_scores"] is not None:
                     pair=0
                     
                     if len(scores_df_continue)%2!=0:
-                        df=scores_df_continue.sort_values(['Punktestand'],ascending=True)
+                        df=scores_df_continue.sort_values(['Punktestand',"Streaks (Runden ohne Niederlage)", 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'],ascending=[True,True,True,True])
                         df1=df[df['Punktestand']==df.iloc[0]['Punktestand']]
                         df1=df1[df1['Freilose']==0]
                         # if len(df1)>0:
@@ -378,7 +399,7 @@ if st.session_state["round1_scores"] is not None:
                             pair=pair+1
 
                     st.write("Weiter geht's. In dieser Tabelle findest du die Spielerpaarungen für Runde " +str(runde)+ ". Bitte trage nach der Runde in die Spielergebnis-Spalten den Ausgang des jeweiligen Spiels ein.")
-                    st.write("*0 - unentschieden; 1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
+                    st.write("*1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2; 3 - unentschieden oder Abbruch aus Zeitgründen*")
                     st.write("Falls die Spielergebnis-Spalten nicht sichtbar sein sollten, bitte nach rechts sliden oder die Tabelle maximieren.")
                     st.session_state["pairs"+runden_title]=pairs_round_df
                     pairs_round_df_edited = st.data_editor(pairs_round_df,key="round"+str(runde)+"_editor", height=35*len(pairs_round_df)+38, hide_index=True)
@@ -421,10 +442,7 @@ if st.session_state["round1_scores"] is not None:
                             punkte_spieler_2_runde=0
                             if spiele == 2:
                                 for spiel in range(int(spiele)):
-                                    if (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]=="0"):
-                                        unentschieden_spieler_1=unentschieden_spieler_1+1
-                                        unentschieden_spieler_2=unentschieden_spieler_2+1
-                                    elif (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]=="1"):
+                                    if (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]=="1"):
                                         siege_spieler_1=siege_spieler_1+1
                                         niederlagen_spieler_2=niederlagen_spieler_2+1
                                         punkte_spieler_1_runde=punkte_spieler_1_runde+3 
@@ -435,36 +453,49 @@ if st.session_state["round1_scores"] is not None:
                                         punkte_spieler_2_runde=punkte_spieler_2_runde+3 
                                         punkte_spieler_2=punkte_spieler_2+3
                                     elif (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel "+str(spiel+1)]=="3"):
-                                        if (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 1"]=="1"):
+                                        if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]==1):
                                             punkte_spieler_1=punkte_spieler_1+3
-                                            unentschieden_spieler_1=unentschieden_spieler_1+1
-                                            unentschieden_spieler_2=unentschieden_spieler_2+1
-                                        if (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 1"]=="2"):
+                                            siege_spieler_1=siege_spieler_1+1
+                                            niederlagen_spieler_2=niederlagen_spieler_2+1
+                                        if (pairs_round1_df_edited.loc[i,"Spielergebnis - Spiel 1"]==2):
                                             punkte_spieler_2=punkte_spieler_2+3
-                                            unentschieden_spieler_1=unentschieden_spieler_1+1
-                                            unentschieden_spieler_2=unentschieden_spieler_2+1
+                                            siege_spieler_1=siege_spieler_1+1
+                                            niederlagen_spieler_2=niederlagen_spieler_2+1
                                 if (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 1"]=="1") & (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 2"]=="1"):
                                     punkte_spieler_1=punkte_spieler_1+1
                                 if (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 1"]=="2") & (pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 2"]=="2"):
                                     punkte_spieler_2=punkte_spieler_2+1
 
-                            elif spiele == 3:
-                                for s in range(spiele+1):
-                                    ausgang=[int(pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 1"]),
-                                            int(pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 2"]),
-                                            int(pairs_round_df_edited.loc[i,"Spielergebnis - Spiel 3"])]
-                                    if ausgang.count(1) == 2:
-                                        punkte_spieler_1=punkte_spieler_1+3
-                                        punkte_spieler_2=punkte_spieler_2
+                            elif spiele == 3: 
+                                ausgang=[]
+                                for spielergebnis in ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]:
+                                    if pd.isna(pairs_round_df_edited.loc[i, spielergebnis]) or (pairs_round_df_edited.loc[i, spielergebnis] == ""):
+                                        ausgang.append(0)
                                     else:
-                                        punkte_spieler_2=punkte_spieler_2+3
-                                        punkte_spieler_1=punkte_spieler_1
+                                        ausgang.append(int(pairs_round_df_edited.loc[i,spielergebnis]))
+                                if ausgang.count(1) == 2:
+                                    punkte_spieler_1=punkte_spieler_1+3
+                                    punkte_spieler_2=punkte_spieler_2
                                     siege_spieler_1=siege_spieler_1+ausgang.count(1)
                                     niederlagen_spieler_1=niederlagen_spieler_1+ausgang.count(2)
-                                    unentschieden_spieler_1=unentschieden_spieler_1+ausgang.count(0)
                                     siege_spieler_2=siege_spieler_2+ausgang.count(2)
-                                    niederlagen_spieler_2=ausgang.count(1)
-                                    unentschieden_spieler_2=unentschieden_spieler_2+ausgang.count(0)
+                                    niederlagen_spieler_2=niederlagen_spieler_2+ausgang.count(1)
+                                elif ausgang.count(2) == 2:
+                                    punkte_spieler_2=punkte_spieler_2+3
+                                    punkte_spieler_1=punkte_spieler_1+0
+                                    siege_spieler_1=siege_spieler_1+ausgang.count(1)
+                                    niederlagen_spieler_1=niederlagen_spieler_1+ausgang.count(2)
+                                    siege_spieler_2=siege_spieler_2+ausgang.count(2)
+                                    niederlagen_spieler_2=niederlagen_spieler_2+ausgang.count(1)                            
+                                elif ausgang.count(3) > 0:
+                                    punkte_spieler_2=punkte_spieler_2+1
+                                    punkte_spieler_1=punkte_spieler_1+1
+                                    siege_spieler_1=siege_spieler_1+1
+                                    niederlagen_spieler_1=niederlagen_spieler_1+1
+                                    siege_spieler_2=siege_spieler_2+1
+                                    niederlagen_spieler_2=niederlagen_spieler_2+1                       
+                                    unentschieden_spieler_1=unentschieden_spieler_1+1
+                                    unentschieden_spieler_2=unentschieden_spieler_1+1
                             scores_df.loc[spieler1_index, "Punktestand"]=punkte_spieler_1
                             scores_df.loc[spieler2_index, "Punktestand"]=punkte_spieler_2
                             scores_df.loc[spieler1_index, "Siege"]=siege_spieler_1
@@ -475,6 +506,15 @@ if st.session_state["round1_scores"] is not None:
                             scores_df.loc[spieler2_index, "Unentschieden"]=unentschieden_spieler_2
                             scores_df.loc[spieler1_index, "Freilose"]=freilose_spieler_1
                             scores_df.loc[spieler2_index, "Freilose"]=freilose_spieler_2
+                            if (ausgang.count(2) == 0) & (ausgang.count(3)==0):
+                                scores_df.loc[spieler1_index, "Streaks (Runden ohne Niederlage)"]=scores_old_df.loc[spieler1_index_scores,"Streaks (Runden ohne Niederlage)"]+1
+                                scores_df.loc[spieler2_index, "Streaks (Runden ohne Niederlage)"]=scores_old_df.loc[spieler2_index_scores,"Streaks (Runden ohne Niederlage)"]
+                            elif (ausgang.count(1) == 0) & (ausgang.count(3)==0):
+                                scores_df.loc[spieler2_index, "Streaks (Runden ohne Niederlage)"]=scores_old_df.loc[spieler2_index_scores,"Streaks (Runden ohne Niederlage)"]+1
+                                scores_df.loc[spieler1_index, "Streaks (Runden ohne Niederlage)"]=scores_old_df.loc[spieler1_index_scores,"Streaks (Runden ohne Niederlage)"]
+                            else:
+                                scores_df.loc[spieler2_index, "Streaks (Runden ohne Niederlage)"]=scores_old_df.loc[spieler2_index_scores,"Streaks (Runden ohne Niederlage)"]
+                                scores_df.loc[spieler1_index, "Streaks (Runden ohne Niederlage)"]=scores_old_df.loc[spieler1_index_scores,"Streaks (Runden ohne Niederlage)"]
                             for vorrunde in range(1,runde):
                                 scores_df.loc[spieler1_index, "Gegner:in Runde "+str(vorrunde)]=scores_old_df.loc[spieler1_index_scores,"Gegner:in Runde "+str(vorrunde)]
                                 scores_df.loc[spieler2_index, "Gegner:in Runde "+str(vorrunde)]=scores_old_df.loc[spieler2_index_scores,"Gegner:in Runde "+str(vorrunde)]
@@ -482,8 +522,12 @@ if st.session_state["round1_scores"] is not None:
                             scores_df.loc[spieler2_index, "Gegner:in Runde "+str(runde)]=pairs_round_df_edited.loc[i,'Spieler:in 1']
                             
                         else:
-                            scores_df.loc[spieler1_index, "Punktestand"]=scores_old_df.loc[spieler1_index_scores,"Punktestand"]+7
+                            if spiele == 2:
+                                scores_df.loc[spieler1_index, "Punktestand"]=scores_old_df.loc[spieler1_index_scores,"Punktestand"]+7
+                            if spiele == 3:
+                                scores_df.loc[spieler1_index, "Punktestand"]=scores_old_df.loc[spieler1_index_scores,"Punktestand"]+3
                             scores_df.loc[spieler1_index, "Siege"]=scores_old_df.loc[spieler1_index_scores,"Siege"]
+                            scores_df.loc[spieler1_index, "Streaks (Runden ohne Niederlage)"]=scores_old_df.loc[spieler1_index_scores,"Streaks (Runden ohne Niederlage)"]
                             scores_df.loc[spieler1_index, "Niederlagen"]=scores_old_df.loc[spieler1_index_scores,"Niederlagen"]
                             scores_df.loc[spieler1_index, "Unentschieden"]=scores_old_df.loc[spieler1_index_scores,"Unentschieden"]
                             scores_df.loc[spieler1_index, "Freilose"]=scores_old_df.loc[spieler1_index_scores,"Freilose"]+1
@@ -525,12 +569,12 @@ if st.session_state["round1_scores"] is not None:
                             round_finished=st.form_submit_button("Finaler Punktestand!")
                             if round_finished:
                                 st.session_state["round"+str(runde)+"_scores"]=scores_df
-                                st.dataframe(st.session_state["round"+str(runde)+"_scores"].sort_values(['Punktestand', 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'], ascending=[False, False,False]), height=35*len(scores_df)+38)
+                                st.dataframe(st.session_state["round"+str(runde)+"_scores"].sort_values(['Punktestand', "Streaks (Runden ohne Niederlage)",'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'], ascending=[False,False,False,False]), height=35*len(scores_df)+38)
                         else:
                             round_finished=st.form_submit_button("Zum finalem Punktestand vorm Topcut")
                             if round_finished:
                                 st.session_state["topcut_start"]="start"
-                                scores_df=scores_df.sort_values(['Punktestand', 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'], ascending=[False, False,False])
+                                scores_df=scores_df.sort_values(['Punktestand',"Streaks (Runden ohne Niederlage)", 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'], ascending=[False,False, False,False])
                                 scores_df.index=np.arange(1, len(scores_df)+1)
                                 st.session_state["round"+str(runde)+"_scores"]=scores_df
                                 st.dataframe(st.session_state["round"+str(runde)+"_scores"], height=35*len(scores_df)+38)
@@ -540,7 +584,7 @@ if st.session_state["topcut_start"] == "start":
 
     topcut=st.session_state["topcut"]
     score_swissrounds=st.session_state["round"+str(runde)+"_scores"]
-    spieler_topcut=score_swissrounds.sort_values(['Punktestand', 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'], ascending=[False, False,False])
+    spieler_topcut=score_swissrounds.sort_values(['Punktestand',"Streaks (Runden ohne Niederlage)", 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'], ascending=[False,False, False,False])
     st.dataframe(spieler_topcut.iloc[:topcut].reset_index(drop=True))
 
     if topcut == 4:
@@ -558,9 +602,9 @@ if st.session_state["topcut_start"] == "start":
                     pairing_halbfinale.loc[1, 'Spieler:in 2']= spieler_topcut.loc[3,"Name"]
 
                     st.write("Weiter geht's mit dem Halbfinale. Bitte trage nach der Runde in die Spielergebnis-Spalten den Ausgang des jeweiligen Spiels ein.")
-                    st.write("*0 - unentschieden; 1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
+                    st.write("*1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
                     st.write("Falls die Spielergebnis-Spalten nicht sichtbar sein sollten, bitte nach rechts sliden oder die Tabelle maximieren.")
-                    pairs_halbfinale_edited = st.data_editor(pairing_halbfinale, height=35*len(pairing_halbfinale)+38)
+                    pairs_halbfinale_edited = st.data_editor(pairing_halbfinale, height=35*len(pairing_halbfinale)+38, hide_index=True)
                     #st.dataframe(pairing_halbfinale)
 
                             #st.dataframe(pairs_round1_df)
@@ -572,32 +616,32 @@ if st.session_state["topcut_start"] == "start":
         #Finale und Spiel um Platz 3: 2 Spiele
         if type(st.session_state["result_Halbfinale"]) == pd.DataFrame:
             with st.form("Finale"):   
-                st.header("Finale & Spiel um Platz 3")
+                st.header("Finale")
                 result_Halbfinale=st.session_state["result_Halbfinale"]
                 ergebnisse_runde1=result_Halbfinale.loc[0, ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
                 ergebnisse_runde2=result_Halbfinale.loc[1, ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
                 pairing_finale=pd.DataFrame(columns=['Spieler:in 1', 
                                                      'Spieler:in 2',
                                                      "Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"],
-                                                     index=["Finale","Spiel um Platz 3"])
+                                                     index=["Finale"])
                 if ergebnisse_runde1.count(1) > ergebnisse_runde1.count(2):
                     pairing_finale.loc["Finale", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 1']
-                    pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 2']
+                    #pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 2']
                 else:
                     pairing_finale.loc["Finale", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 2']
-                    pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 1']
+                    #pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 1']
                 if ergebnisse_runde2.count(1) > ergebnisse_runde2.count(2):
                     pairing_finale.loc["Finale", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 1']
-                    pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 2']
+                    #pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 2']
                 else:
                     pairing_finale.loc["Finale", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 2']
-                    pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 1']
+                    #pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 1']
                     
                 st.write("Weiter geht's mit dem Halbfinale. Bitte trage nach der Runde in die Spielergebnis-Spalten den Ausgang des jeweiligen Spiels ein.")
-                st.write("*0 - unentschieden; 1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
+                st.write("*1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
                 st.write("Falls die Spielergebnis-Spalten nicht sichtbar sein sollten, bitte nach rechts sliden oder die Tabelle maximieren.")
 
-                pairs_finale_edited = st.data_editor(pairing_finale, height=35*len(pairing_finale)+38)
+                pairs_finale_edited = st.data_editor(pairing_finale, height=35*len(pairing_finale)+38, hide_index=True)
                 finale=st.form_submit_button("Finale beendet")
 
                 if finale:
@@ -608,15 +652,15 @@ if st.session_state["topcut_start"] == "start":
                     if ergebnisse_runde1.count(1) > ergebnisse_runde1.count(2):
                         st.header("Finaler Punktestand")
                         st.write("🥳 1. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 1'])
-                        st.write("2. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 2'])
+                        #st.write("2. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 2'])
                     else:
                         st.write("🥳 1. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 2'])
-                        st.write("2. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 1'])
+                        #st.write("2. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 1'])
 
-                    if ergebnisse_runde2.count(1) > ergebnisse_runde2.count(2):
-                        st.write("3. Platz: "+pairs_finale_edited.loc["Spiel um Platz 3",'Spieler:in 1'])
-                    else:
-                        st.write("3. Platz: "+pairs_finale_edited.loc["Spiel um Platz 3",'Spieler:in 2'])
+                    #if ergebnisse_runde2.count(1) > ergebnisse_runde2.count(2):
+                        #st.write("3. Platz: "+pairs_finale_edited.loc["Spiel um Platz 3",'Spieler:in 1'])
+                    #else:
+                        #st.write("3. Platz: "+pairs_finale_edited.loc["Spiel um Platz 3",'Spieler:in 2'])
                         
                     st.write(" ")
                     st.write("Hier nochmal der Stand vor den Playoffs:")
@@ -642,9 +686,9 @@ if st.session_state["topcut_start"] == "start":
                     pairing_viertelfinale.loc[3, 'Spieler:in 2']= spieler_topcut.loc[5,"Name"]
 
                     st.write("Weiter geht's mit dem Viertelfinale. Bitte trage nach der Runde in die Spielergebnis-Spalten den Ausgang des jeweiligen Spiels ein.")
-                    st.write("*0 - unentschieden; 1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
+                    st.write("*1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
                     st.write("Falls die Spielergebnis-Spalten nicht sichtbar sein sollten, bitte nach rechts sliden oder die Tabelle maximieren.")
-                    pairs_viertelfinale_edited = st.data_editor(pairing_viertelfinale, height=35*len(pairing_viertelfinale)+38)
+                    pairs_viertelfinale_edited = st.data_editor(pairing_viertelfinale, height=35*len(pairing_viertelfinale)+38, hide_index=True)
                     #st.dataframe(pairing_halbfinale)
 
                             #st.dataframe(pairs_round1_df)
@@ -676,9 +720,9 @@ if st.session_state["topcut_start"] == "start":
                     pairing_halbfinale.loc[1, 'Spieler:in 2']= pairs_viertelfinale_edited.loc[3, 'Spieler:in '+str(sieger_viertelfinale[3])]
                     
                     st.write("Weiter geht's mit dem Halbfinale. Bitte trage nach der Runde in die Spielergebnis-Spalten den Ausgang des jeweiligen Spiels ein.")
-                    st.write("*0 - unentschieden; 1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
+                    st.write("*1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
                     st.write("Falls die Spielergebnis-Spalten nicht sichtbar sein sollten, bitte nach rechts sliden oder die Tabelle maximieren.")
-                    pairs_halbfinale_edited = st.data_editor(pairing_halbfinale, height=35*len(pairing_halbfinale)+38)
+                    pairs_halbfinale_edited = st.data_editor(pairing_halbfinale, height=35*len(pairing_halbfinale)+38, hide_index=True)
                     #st.dataframe(pairing_halbfinale)
 
                             #st.dataframe(pairs_round1_df)
@@ -687,54 +731,54 @@ if st.session_state["topcut_start"] == "start":
                     if halbfinale:
                         st.session_state["result_Halbfinale"] = pairs_halbfinale_edited
         #Finale und Spiel um Platz 3: 2 Spiele
-        st.header("Finale & Spiel um Platz 3")
+        st.header("Finale")
         if type(st.session_state["result_Halbfinale"]) == pd.DataFrame:
             with st.form("Finale"):   
-                st.header("Finale & Spiel um Platz 3")
+                st.header("Finale")
                 result_Halbfinale=st.session_state["result_Halbfinale"]
                 ergebnisse_runde1=result_Halbfinale.loc[0, ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
                 ergebnisse_runde2=result_Halbfinale.loc[1, ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
                 pairing_finale=pd.DataFrame(columns=['Spieler:in 1', 
                                                      'Spieler:in 2',
                                                      "Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"],
-                                                     index=["Finale","Spiel um Platz 3"])
+                                                     index=["Finale"])
                 if ergebnisse_runde1.count(1) > ergebnisse_runde1.count(2):
                     pairing_finale.loc["Finale", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 1']
-                    pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 2']
+                    #pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 2']
                 else:
                     pairing_finale.loc["Finale", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 2']
-                    pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 1']
+                    #pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 1']=result_Halbfinale.loc[0, 'Spieler:in 1']
                 if ergebnisse_runde2.count(1) > ergebnisse_runde2.count(2):
                     pairing_finale.loc["Finale", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 1']
-                    pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 2']
+                    #pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 2']
                 else:
                     pairing_finale.loc["Finale", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 2']
-                    pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 1']
+                    #pairing_finale.loc["Spiel um Platz 3", 'Spieler:in 2']=result_Halbfinale.loc[1, 'Spieler:in 1']
                 
                 st.write("Weiter geht's mit dem Halbfinale. Bitte trage nach der Runde in die Spielergebnis-Spalten den Ausgang des jeweiligen Spiels ein.")
-                st.write("*0 - unentschieden; 1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
+                st.write("*1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2*")
                 st.write("Falls die Spielergebnis-Spalten nicht sichtbar sein sollten, bitte nach rechts sliden oder die Tabelle maximieren.")
 
-                pairs_finale_edited = st.data_editor(pairing_finale, height=35*len(pairing_finale)+38)
+                pairs_finale_edited = st.data_editor(pairing_finale, height=35*len(pairing_finale)+38, hide_index=True)
                 finale=st.form_submit_button("Finale beendet - weiter zum Ranking")
 
                 if finale:
                     st.session_state["result_Finale"] = pairs_finale_edited
                     ergebnisse_runde1=pairs_finale_edited.loc["Finale", ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
-                    ergebnisse_runde2=pairs_finale_edited.loc["Spiel um Platz 3", ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
+                    #ergebnisse_runde2=pairs_finale_edited.loc["Spiel um Platz 3", ["Spielergebnis - Spiel 1","Spielergebnis - Spiel 2","Spielergebnis - Spiel 3"]].to_list()
 
                     if ergebnisse_runde1.count(1) > ergebnisse_runde1.count(2):
                         st.header("Finaler Punktestand")
                         st.write("🥳 1. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 1'])
-                        st.write("2. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 2'])
+                        #st.write("2. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 2'])
                     else:
                         st.write("🥳 1. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 2'])
-                        st.write("2. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 1'])
+                        #st.write("2. Platz: "+pairs_finale_edited.loc["Finale",'Spieler:in 1'])
 
-                    if ergebnisse_runde2.count(1) > ergebnisse_runde2.count(2):
-                        st.write("3. Platz: "+pairs_finale_edited.loc["Spiel um Platz 3",'Spieler:in 1'])
-                    else:
-                        st.write("3. Platz: "+pairs_finale_edited.loc["Spiel um Platz 3",'Spieler:in 2'])
+                    # if ergebnisse_runde2.count(1) > ergebnisse_runde2.count(2):
+                    #     st.write("3. Platz: "+pairs_finale_edited.loc["Spiel um Platz 3",'Spieler:in 1'])
+                    # else:
+                    #     st.write("3. Platz: "+pairs_finale_edited.loc["Spiel um Platz 3",'Spieler:in 2'])
                         
                     st.write(" ")
                     st.write("Hier nochmal der Stand vor den Playoffs:")
