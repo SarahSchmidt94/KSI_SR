@@ -280,6 +280,7 @@ if (st.session_state["round1"] is not None) and (st.session_state["pairsRunde 2"
                 scores_df.loc[spieler1_index, "Unentschieden"]=0
                 scores_df.loc[spieler1_index, "Freilose"]=1
                 scores_df.loc[spieler1_index, "Gegner:in Runde 1"]="Freilos"
+                scores_df.loc[spieler1_index, "Streaks (Runden ohne Niederlage)"]=0
        
         scores_df['Punktestand der Gegner:innen der Gegner:innen']=""
         scores_df['Punktestand der Gegner:innen']=""
@@ -367,41 +368,145 @@ if st.session_state["round1_scores"] is not None:
                     scores_df_continue=scores_df.copy()
                     scores_df_continue=scores_df_continue[~scores_df_continue['Name'].isin(dropped_participants_df['Name'])]
                     #st.dataframe(scores_df_continue)
-                    pair=0
-                    
-                    if len(scores_df_continue)%2!=0:
-                        df=scores_df_continue.sort_values(['Punktestand',"Streaks (Runden ohne Niederlage)", 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'],ascending=[True,True,True,True])
-                        df1=df[df['Punktestand']==df.iloc[0]['Punktestand']]
-                        df1=df1[df1['Freilose']==0]
-                        # if len(df1)>0:
-                        #     worst_random=random.choice([x for x in df1.index])
-                        # else:
-                        n=1
-                        while len(df1)==0:
-                            score=sorted(df['Punktestand'].unique())[n]
-                            df1=df[df['Punktestand']==score]
-                            df1=df1[df1['Freilose']==0]
-                            n=n+1
-                        worst_random=random.choice([x for x in df1.index])
-                        pairs_round_df.loc[pair,"Spieler:in 1"] = scores_df.loc[worst_random,"Name"]
-                        pairs_round_df.loc[pair,"Spieler:in 2"] = "Freilos"
-                        pair=pair+1
 
-                        scores_df_continue=scores_df_continue.drop(worst_random)
-                    scores_df_continue.index=np.arange(1, len(scores_df_continue)+1)
+                    # Initialize dataframes and sets
+                    df = scores_df_continue
+                    played_matches=set()
+                    for y in range(1,runde):
+                        played_matches_runde = set(
+                            tuple(sorted([row["Name"], row["Gegner:in Runde "+str(y)]])) for _, row in df.iterrows()
+                                        )
+                        played_matches=played_matches.union(played_matches_runde)
+                    freilos_tracker = []  # Set to track players who have already received "freilos"
+                    freilos_names=scores_df_continue[scores_df_continue["Freilose"]==1]['Name']
+                    for n in freilos_names:
+                        freilos_tracker.append(n)
 
-                    for i in scores_df_continue.index:
-                        if i%2 == 1:
-                            pairs_round_df.loc[pair,"Spieler:in 1"] = scores_df_continue.loc[i,"Name"]
-                            
+                    # Sort players by scores (descending)
+                    df = df.sort_values(by="Punktestand", ascending=False).reset_index(drop=True)
+
+                    # Pair players without redundancy
+                    pairs = []
+                    unpaired = []
+                    paired = []
+
+                    for i, player1 in df.iterrows():
+                        if (player1["Name"] in unpaired) or (player1["Name"] in paired):
+                            print("x")
+                        elif i == (len(df)-1):
+                            unpaired.append(player1["Name"])
                         else:
-                            pairs_round_df.loc[pair,"Spieler:in 2"] = scores_df_continue.loc[i,"Name"]
-                            pair=pair+1
+                            for j, player2 in df[i+1:].iterrows():
+                                #if player1["Punktestand"] == player2["Punktestand"]:
+                                if (player2["Name"] not in unpaired) and (player2["Name"] not in paired):
+                                    pair = tuple(sorted([player1["Name"], player2["Name"]]))
+                                    if pair not in played_matches:
+                                        pairs.append(pair)
+                                        played_matches.add(pair)
+                                        paired.append(player1["Name"])
+                                        paired.append(player2["Name"])  # Mark player2 as paired
+                                        break
+                                    else:
+                                        if j == (len(df)-1):
+                                            unpaired.append(player1["Name"])  # Mark player1 as unpaired
+
+                    # Assign "freilos" if the number of players is uneven
+                    freilos_warning=[]
+                    if len(unpaired) % 2 == 1:
+                        freilos_assigned = False
+                        remaining_unpaired = []
+
+                        for player in unpaired:
+                            if not freilos_assigned and player not in freilos_tracker:
+                                pairs.append((player, "Freilos"))
+                                freilos_tracker.append(player)
+                                freilos_assigned = True
+                            elif not freilos_assigned and player == unpaired[-1]:
+                                pairs.append((player, "Freilos"))
+                                freilos_tracker.append(player)
+                                freilos_assigned = True
+                                freilos_warning.append(player)
+                            else:
+                                remaining_unpaired.append(player)
+
+                        unpaired = remaining_unpaired
+
+                    # Pair remaining unpaired players randomly
+                    redundant_pairs=[]
+                    while len(unpaired) > 1:
+                        player1 = unpaired.pop(0)
+                        player2 = unpaired.pop(0)
+                        pair = tuple(sorted([player1, player2]))
+                        pairs.append((player1, player2))
+
+                        if pair in played_matches:
+                            redundant_pairs.append(pair)
+
+
+
+                    # Output the pairs
+                    for p,pair in enumerate(pairs):
+                        pairs_round_df.loc[p,"Spieler:in 1"]=pair[0]
+                        pairs_round_df.loc[p,"Spieler:in 2"]=pair[1]
+                    #print("Pairs for this round:", pairs)
+                    #print("Players with 'freilos':", freilos_tracker)
+
+                    #######
+                    # pair=0
+                    
+                    # if len(scores_df_continue)%2!=0:
+                    #     df=scores_df_continue.sort_values(['Punktestand',"Streaks (Runden ohne Niederlage)", 'Punktestand der Gegner:innen','Punktestand der Gegner:innen der Gegner:innen'],ascending=[True,True,True,True])
+                    #     df1=df[df['Punktestand']==df.iloc[0]['Punktestand']]
+                    #     df1=df1[df1['Freilose']==0]
+                    #     # if len(df1)>0:
+                    #     #     worst_random=random.choice([x for x in df1.index])
+                    #     # else:
+                    #     n=1
+                    #     while len(df1)==0:
+                    #         score=sorted(df['Punktestand'].unique())[n]
+                    #         df1=df[df['Punktestand']==score]
+                    #         df1=df1[df1['Freilose']==0]
+                    #         n=n+1
+                    #     worst_random=random.choice([x for x in df1.index])
+                    #     pairs_round_df.loc[pair,"Spieler:in 1"] = scores_df.loc[worst_random,"Name"]
+                    #     pairs_round_df.loc[pair,"Spieler:in 2"] = "Freilos"
+                    #     pair=pair+1
+
+                    #     scores_df_continue=scores_df_continue.drop(worst_random)
+                    # scores_df_continue.index=np.arange(1, len(scores_df_continue)+1)
+
+                    # for i in scores_df_continue.index:
+                    #     if i%2 == 1:
+                    #         pairs_round_df.loc[pair,"Spieler:in 1"] = scores_df_continue.loc[i,"Name"]
+                            
+                    #     else:
+                    #         pairs_round_df.loc[pair,"Spieler:in 2"] = scores_df_continue.loc[i,"Name"]
+                    #         pair=pair+1
+                    ######
 
                     st.write("Weiter geht's. In dieser Tabelle findest du die Spielerpaarungen für Runde " +str(runde)+ ". Bitte trage nach der Runde in die Spielergebnis-Spalten den Ausgang des jeweiligen Spiels ein.")
                     st.write("*1 - Sieg von Spieler:in 1; 2 - Sieg von Spieler:in 2; 3 - unentschieden oder Abbruch aus Zeitgründen*")
                     st.write("Falls die Spielergebnis-Spalten nicht sichtbar sein sollten, bitte nach rechts sliden oder die Tabelle maximieren.")
+                    
+                    if len(redundant_pairs)>=1:
+                        st.write("Achtung! Folgende Spieler:innenpaare sind bereits in einer der vorherigen Runden aufeinander getroffen:"+str(redundant_pairs))
+                        st.write("Nimm gegebenenfalls manuelle Anpassungen an den redundanten Spielerpaarungen vor.")
+                        st.write("Hier nochmal ein Überblick, wer bereits gegen wen gespielt hat:")
+                        columns=["Name"]
+                        for y in range(1,runde):
+                            columns.append("Gegner:in Runde "+str(y))
+                        st.dataframe(scores_df[columns], height=35*len(scores_df)+38, hide_index=True)
+                    elif len(freilos_warning)>=1:
+                        st.write("Achtung! Folgende:r Spieler:in wurde erneut ein Freilos zugeordnet: "+freilos_warning[0])
+                        st.write("Nimm gegebenenfalls manuelle Anpassungen an der Freiloszuordnung und den Spielerpaarungen vor.")
+                        st.write("Hier nochmal ein Überblick, wer bereits gegen wen gespielt hat:")
+                        columns=["Name"]
+                        for y in range(1,runde):
+                            columns.append("Gegner:in Runde "+str(y))
+                        st.dataframe(scores_df[columns], height=35*len(scores_df)+38, hide_index=True)
                     st.session_state["pairs"+runden_title]=pairs_round_df
+                    
+                    
                     pairs_round_df_edited = st.data_editor(pairs_round_df,key="round"+str(runde)+"_editor", height=35*len(pairs_round_df)+38, hide_index=True)
                     #pairs_round1_df_edited = st.data_editor(pairs_round1_df,key="round1_editor")
                     button_title="Runde "+str(runde)+" beendet"
